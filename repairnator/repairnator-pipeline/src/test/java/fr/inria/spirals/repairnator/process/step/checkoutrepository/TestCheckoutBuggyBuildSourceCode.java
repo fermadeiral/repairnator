@@ -165,7 +165,7 @@ public class TestCheckoutBuggyBuildSourceCode {
         File tmpDir = tmpDirPath.toFile();
         tmpDir.deleteOnExit();
 
-        BuildToBeInspected toBeInspected = new BuildToBeInspected(build, previousBuild, status, "");
+        BuildToBeInspected toBeInspected = new BuildToBeInspected(previousBuild, build, status, "");
 
         JobStatus jobStatus = new JobStatus(tmpDir.getAbsolutePath()+"/repo");
 
