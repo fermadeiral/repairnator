@@ -1,5 +1,6 @@
 package fr.inria.spirals.repairnator.process.maven.output;
 
+import fr.inria.spirals.repairnator.TestUtils;
 import fr.inria.spirals.repairnator.process.inspectors.JobStatus;
 import fr.inria.spirals.repairnator.process.inspectors.ProjectInspector;
 import fr.inria.spirals.repairnator.process.maven.MavenHelper;
@@ -11,9 +12,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -27,12 +26,11 @@ public class TestMavenFilterTestOutputHandler {
         String resourcePath = "./src/test/resources/build-logs/log-test-failures.txt";
         List<String> lines = Files.readAllLines(new File(resourcePath).toPath());
 
-        ProjectInspector inspector = mock(ProjectInspector.class);
         Path tmp = Files.createTempDirectory("test-filter");
-        when(inspector.getRepoLocalPath()).thenReturn(tmp.toAbsolutePath().toString());
-
         JobStatus jobStatus = new JobStatus(tmp.toAbsolutePath().toString());
-        when(inspector.getJobStatus()).thenReturn(jobStatus);
+
+        ProjectInspector inspector = TestUtils.mockProjectInspector(tmp.toAbsolutePath().toString(), jobStatus);
+
         MavenHelper mavenHelper = mock(MavenHelper.class);
         when(mavenHelper.getInspector()).thenReturn(inspector);
         when(mavenHelper.getName()).thenReturn("test");
@@ -54,12 +52,11 @@ public class TestMavenFilterTestOutputHandler {
         String resourcePath = "./src/test/resources/build-logs/log-test-druidio.txt";
         List<String> lines = Files.readAllLines(new File(resourcePath).toPath());
 
-        ProjectInspector inspector = mock(ProjectInspector.class);
         Path tmp = Files.createTempDirectory("test-filter");
-        when(inspector.getRepoLocalPath()).thenReturn(tmp.toAbsolutePath().toString());
-
         JobStatus jobStatus = new JobStatus(tmp.toAbsolutePath().toString());
-        when(inspector.getJobStatus()).thenReturn(jobStatus);
+
+        ProjectInspector inspector = TestUtils.mockProjectInspector(tmp.toAbsolutePath().toString(), jobStatus);
+
         MavenHelper mavenHelper = mock(MavenHelper.class);
         when(mavenHelper.getInspector()).thenReturn(inspector);
         when(mavenHelper.getName()).thenReturn("test");

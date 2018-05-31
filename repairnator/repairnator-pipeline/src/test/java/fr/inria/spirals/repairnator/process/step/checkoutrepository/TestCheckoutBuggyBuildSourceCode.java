@@ -2,18 +2,15 @@ package fr.inria.spirals.repairnator.process.step.checkoutrepository;
 
 import ch.qos.logback.classic.Level;
 import fr.inria.jtravis.entities.Build;
-import fr.inria.jtravis.helpers.BuildHelper;
 import fr.inria.spirals.repairnator.BuildToBeInspected;
-import fr.inria.spirals.repairnator.process.inspectors.StepStatus;
-import fr.inria.spirals.repairnator.process.step.CloneRepository;
-import fr.inria.spirals.repairnator.states.PipelineState;
-import fr.inria.spirals.repairnator.states.ScannedBuildStatus;
+import fr.inria.spirals.repairnator.TestUtils;
 import fr.inria.spirals.repairnator.Utils;
 import fr.inria.spirals.repairnator.config.RepairnatorConfig;
-import fr.inria.spirals.repairnator.config.RepairnatorConfigException;
-import fr.inria.spirals.repairnator.process.git.GitHelper;
 import fr.inria.spirals.repairnator.process.inspectors.JobStatus;
 import fr.inria.spirals.repairnator.process.inspectors.ProjectInspector;
+import fr.inria.spirals.repairnator.process.inspectors.StepStatus;
+import fr.inria.spirals.repairnator.process.step.CloneRepository;
+import fr.inria.spirals.repairnator.states.ScannedBuildStatus;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.diff.DiffEntry;
@@ -32,13 +29,9 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.notNullValue;
-import static org.hamcrest.CoreMatchers.startsWith;
+import static org.hamcrest.CoreMatchers.*;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 /**
  * Created by urli on 21/04/2017.
@@ -55,7 +48,7 @@ public class TestCheckoutBuggyBuildSourceCode {
     }
 
     @Test
-    public void testCheckoutPreviousBuildSourceCodeNoPR() throws IOException, GitAPIException, RepairnatorConfigException {
+    public void testCheckoutPreviousBuildSourceCodeNoPR() throws IOException, GitAPIException {
         long buildId = 221992429; // INRIA/spoon
         long previousBuildId = 218213030;
         ScannedBuildStatus status = ScannedBuildStatus.PASSING_AND_PASSING_WITH_TEST_CHANGES;
@@ -80,17 +73,9 @@ public class TestCheckoutBuggyBuildSourceCode {
 
         BuildToBeInspected toBeInspected = new BuildToBeInspected(previousBuild, build, status, "");
 
-        ProjectInspector inspector = mock(ProjectInspector.class);
-        when(inspector.getWorkspace()).thenReturn(tmpDir.getAbsolutePath());
-        when(inspector.getRepoLocalPath()).thenReturn(tmpDir.getAbsolutePath()+"/repo");
-        when(inspector.getRepoToPushLocalPath()).thenReturn(tmpDir.getAbsolutePath()+"/repotopush");
-        when(inspector.getBuildToBeInspected()).thenReturn(toBeInspected);
-        when(inspector.getPatchedBuild()).thenReturn(build);
-        when(inspector.getBuggyBuild()).thenReturn(previousBuild);
-        when(inspector.getGitHelper()).thenReturn(new GitHelper());
-
         JobStatus jobStatus = new JobStatus(tmpDir.getAbsolutePath()+"/repo");
-        when(inspector.getJobStatus()).thenReturn(jobStatus);
+
+        ProjectInspector inspector = TestUtils.mockProjectInspector(tmpDir, toBeInspected, jobStatus);
 
         CloneRepository cloneStep = new CloneRepository(inspector);
         CheckoutBuggyBuildSourceCode checkoutBuild = new CheckoutBuggyBuildSourceCode(inspector, true);
@@ -157,7 +142,7 @@ public class TestCheckoutBuggyBuildSourceCode {
     }
 
     @Test
-    public void testCheckoutPreviousBuildSourceCodeNoPR2() throws IOException, GitAPIException, RepairnatorConfigException {
+    public void testCheckoutPreviousBuildSourceCodeNoPR2() throws IOException, GitAPIException {
         long buildId = 222020421; // alibaba/fastjson
         long previousBuildId = 222016611;
         ScannedBuildStatus status = ScannedBuildStatus.PASSING_AND_PASSING_WITH_TEST_CHANGES;
@@ -182,17 +167,9 @@ public class TestCheckoutBuggyBuildSourceCode {
 
         BuildToBeInspected toBeInspected = new BuildToBeInspected(build, previousBuild, status, "");
 
-        ProjectInspector inspector = mock(ProjectInspector.class);
-        when(inspector.getWorkspace()).thenReturn(tmpDir.getAbsolutePath());
-        when(inspector.getRepoLocalPath()).thenReturn(tmpDir.getAbsolutePath()+"/repo");
-        when(inspector.getRepoToPushLocalPath()).thenReturn(tmpDir.getAbsolutePath()+"/repotopush");
-        when(inspector.getBuildToBeInspected()).thenReturn(toBeInspected);
-        when(inspector.getPatchedBuild()).thenReturn(build);
-        when(inspector.getBuggyBuild()).thenReturn(previousBuild);
-        when(inspector.getGitHelper()).thenReturn(new GitHelper());
-
         JobStatus jobStatus = new JobStatus(tmpDir.getAbsolutePath()+"/repo");
-        when(inspector.getJobStatus()).thenReturn(jobStatus);
+
+        ProjectInspector inspector = TestUtils.mockProjectInspector(tmpDir, toBeInspected, jobStatus);
 
         CloneRepository cloneStep = new CloneRepository(inspector);
         CheckoutBuggyBuildSourceCode checkoutBuild = new CheckoutBuggyBuildSourceCode(inspector, true);
@@ -259,7 +236,7 @@ public class TestCheckoutBuggyBuildSourceCode {
     }
 
     @Test
-    public void testCheckoutPreviousBuildSourceCodeWithPR() throws IOException, GitAPIException, RepairnatorConfigException {
+    public void testCheckoutPreviousBuildSourceCodeWithPR() throws IOException, GitAPIException {
         long buildId = 223248816; // HubSpot/Singularity
         long previousBuildId = 222209171;
         ScannedBuildStatus status = ScannedBuildStatus.PASSING_AND_PASSING_WITH_TEST_CHANGES;
@@ -284,17 +261,9 @@ public class TestCheckoutBuggyBuildSourceCode {
 
         BuildToBeInspected toBeInspected = new BuildToBeInspected(previousBuild, build, status, "");
 
-        ProjectInspector inspector = mock(ProjectInspector.class);
-        when(inspector.getWorkspace()).thenReturn(tmpDir.getAbsolutePath());
-        when(inspector.getRepoLocalPath()).thenReturn(tmpDir.getAbsolutePath()+"/repo");
-        when(inspector.getRepoToPushLocalPath()).thenReturn(tmpDir.getAbsolutePath()+"/repotopush");
-        when(inspector.getBuildToBeInspected()).thenReturn(toBeInspected);
-        when(inspector.getPatchedBuild()).thenReturn(build);
-        when(inspector.getBuggyBuild()).thenReturn(previousBuild);
-        when(inspector.getGitHelper()).thenReturn(new GitHelper());
-
         JobStatus jobStatus = new JobStatus(tmpDir.getAbsolutePath()+"/repo");
-        when(inspector.getJobStatus()).thenReturn(jobStatus);
+
+        ProjectInspector inspector = TestUtils.mockProjectInspector(tmpDir, toBeInspected, jobStatus);
 
         CloneRepository cloneStep = new CloneRepository(inspector);
         CheckoutBuggyBuildSourceCode checkoutBuild = new CheckoutBuggyBuildSourceCode(inspector, true);
