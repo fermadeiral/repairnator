@@ -26,7 +26,6 @@ import org.junit.Test;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -46,17 +45,12 @@ public class TestAstorRepair {
 	public void testAstorJkali() throws IOException {
 		long buildId = 376820338; // surli/failingProject astor-jkali-failure
 
-		Optional<Build> optionalBuild = RepairnatorConfig.getInstance().getJTravis().build().fromId(buildId);
-		assertTrue(optionalBuild.isPresent());
-		Build build = optionalBuild.get();
-		assertThat(build, notNullValue());
-		assertThat(buildId, is(build.getId()));
+        Build build = this.checkBuildAndReturn(buildId, false);
 
 		AstorJKaliRepair astorJKaliRepair = new AstorJKaliRepair();
 
 		RepairnatorConfig.getInstance().setRepairTools(Collections.singleton(astorJKaliRepair.getRepairToolName()));
-		Path tmpDirPath = Files.createTempDirectory("test_astorjkali");
-		File tmpDir = tmpDirPath.toFile();
+		File tmpDir = Files.createTempDirectory("test_astorjkali").toFile();
 		tmpDir.deleteOnExit();
 
 		BuildToBeInspected toBeInspected = new BuildToBeInspected(build, null, ScannedBuildStatus.ONLY_FAIL, "");
@@ -98,17 +92,12 @@ public class TestAstorRepair {
 	public void testAstorJMut() throws IOException {
 		long buildId = 376847154; // surli/failingProject astor-jkali-failure
 
-		Optional<Build> optionalBuild = RepairnatorConfig.getInstance().getJTravis().build().fromId(buildId);
-		assertTrue(optionalBuild.isPresent());
-		Build build = optionalBuild.get();
-		assertThat(build, notNullValue());
-		assertThat(buildId, is(build.getId()));
+        Build build = this.checkBuildAndReturn(buildId, false);
 
 		AstorJMutRepair astorJMutRepair = new AstorJMutRepair();
 
 		RepairnatorConfig.getInstance().setRepairTools(Collections.singleton(astorJMutRepair.getRepairToolName()));
-		Path tmpDirPath = Files.createTempDirectory("test_astorjkali");
-		File tmpDir = tmpDirPath.toFile();
+		File tmpDir = Files.createTempDirectory("test_astorjkali").toFile();
 		tmpDir.deleteOnExit();
 
 		BuildToBeInspected toBeInspected = new BuildToBeInspected(build, null, ScannedBuildStatus.ONLY_FAIL, "");
@@ -144,4 +133,14 @@ public class TestAstorRepair {
 		List<RepairPatch> allPatches = inspector.getJobStatus().getAllPatches();
 		assertThat(allPatches.isEmpty(), is(false));
 	}
+
+    private Build checkBuildAndReturn(long buildId, boolean isPR) {
+        Optional<Build> optionalBuild = RepairnatorConfig.getInstance().getJTravis().build().fromId(buildId);
+        assertTrue(optionalBuild.isPresent());
+        Build build = optionalBuild.get();
+        assertThat(build, notNullValue());
+        assertThat(buildId, is(build.getId()));
+        assertThat(build.isPullRequest(), is(isPR));
+        return build;
+    }
 }
