@@ -18,7 +18,6 @@ import org.junit.Test;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
 
@@ -46,14 +45,9 @@ public class TestTestProject {
     public void testTestProjectWhenFailing() throws IOException {
         long buildId = 207890790; // surli/failingProject build
 
-        Optional<Build> optionalBuild = RepairnatorConfig.getInstance().getJTravis().build().fromId(buildId);
-        assertTrue(optionalBuild.isPresent());
-        Build build = optionalBuild.get();
-        assertThat(build, notNullValue());
-        assertThat(buildId, is(build.getId()));
+        Build build = this.checkBuildAndReturn(buildId, false);
 
-        Path tmpDirPath = Files.createTempDirectory("test_testproject");
-        File tmpDir = tmpDirPath.toFile();
+        File tmpDir = Files.createTempDirectory("test_testproject").toFile();
         tmpDir.deleteOnExit();
 
         BuildToBeInspected toBeInspected = new BuildToBeInspected(build, null, ScannedBuildStatus.ONLY_FAIL, "");
@@ -83,14 +77,9 @@ public class TestTestProject {
     public void testTestProjectWhenErroring() throws IOException {
         long buildId = 208240908; // surli/failingProject build
 
-        Optional<Build> optionalBuild = RepairnatorConfig.getInstance().getJTravis().build().fromId(buildId);
-        assertTrue(optionalBuild.isPresent());
-        Build build = optionalBuild.get();
-        assertThat(build, notNullValue());
-        assertThat(buildId, is(build.getId()));
+        Build build = this.checkBuildAndReturn(buildId, false);
 
-        Path tmpDirPath = Files.createTempDirectory("test_clone");
-        File tmpDir = tmpDirPath.toFile();
+        File tmpDir = Files.createTempDirectory("test_clone").toFile();
         tmpDir.deleteOnExit();
 
         BuildToBeInspected toBeInspected = new BuildToBeInspected(build, null, ScannedBuildStatus.ONLY_FAIL, "");
@@ -120,14 +109,9 @@ public class TestTestProject {
     public void testTestProjectWhenNotFailing() throws IOException {
         long buildId = 201176013; // surli/failingProject build
 
-        Optional<Build> optionalBuild = RepairnatorConfig.getInstance().getJTravis().build().fromId(buildId);
-        assertTrue(optionalBuild.isPresent());
-        Build build = optionalBuild.get();
-        assertThat(build, notNullValue());
-        assertThat(buildId, is(build.getId()));
+        Build build = this.checkBuildAndReturn(buildId, false);
 
-        Path tmpDirPath = Files.createTempDirectory("test_clone");
-        File tmpDir = tmpDirPath.toFile();
+        File tmpDir = Files.createTempDirectory("test_clone").toFile();
         tmpDir.deleteOnExit();
 
         BuildToBeInspected toBeInspected = new BuildToBeInspected(build, null, ScannedBuildStatus.ONLY_FAIL, "");
@@ -151,5 +135,15 @@ public class TestTestProject {
         for (StepStatus stepStatus : stepStatusList) {
             assertThat(stepStatus.isSuccess(), is(true));
         }
+    }
+
+    private Build checkBuildAndReturn(long buildId, boolean isPR) {
+        Optional<Build> optionalBuild = RepairnatorConfig.getInstance().getJTravis().build().fromId(buildId);
+        assertTrue(optionalBuild.isPresent());
+        Build build = optionalBuild.get();
+        assertThat(build, notNullValue());
+        assertThat(buildId, is(build.getId()));
+        assertThat(build.isPullRequest(), is(isPR));
+        return build;
     }
 }

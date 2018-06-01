@@ -26,7 +26,6 @@ import org.junit.Test;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -55,16 +54,11 @@ public class TestGatherTestInformation {
     public void testGatherTestInformationWhenFailing() throws IOException {
         long buildId = 207890790; // surli/failingProject build
 
-        Optional<Build> optionalBuild = RepairnatorConfig.getInstance().getJTravis().build().fromId(buildId);
-        assertTrue(optionalBuild.isPresent());
-        Build build = optionalBuild.get();
-        assertThat(build, notNullValue());
-        assertThat(buildId, is(build.getId()));
+        Build build = this.checkBuildAndReturn(buildId, false);
 
-        Path tmpDirPath = Files.createTempDirectory("test_gathertest");
-        File tmpDir = tmpDirPath.toFile();
+        File tmpDir = Files.createTempDirectory("test_gathertest").toFile();
         tmpDir.deleteOnExit();
-        System.out.println("Dirpath : "+tmpDirPath);
+        System.out.println("Dirpath : "+tmpDir.getAbsolutePath());
 
         File repoDir = new File(tmpDir, "repo");
         BuildToBeInspected toBeInspected = new BuildToBeInspected(build, null, ScannedBuildStatus.ONLY_FAIL, "");
@@ -113,14 +107,9 @@ public class TestGatherTestInformation {
     public void testGatherTestInformationOnlyOneErroring() throws IOException {
         long buildId = 208897371; // surli/failingProject build
 
-        Optional<Build> optionalBuild = RepairnatorConfig.getInstance().getJTravis().build().fromId(buildId);
-        assertTrue(optionalBuild.isPresent());
-        Build build = optionalBuild.get();
-        assertThat(build, notNullValue());
-        assertThat(buildId, is(build.getId()));
+        Build build = this.checkBuildAndReturn(buildId, false);
 
-        Path tmpDirPath = Files.createTempDirectory("test_gathertest");
-        File tmpDir = tmpDirPath.toFile();
+        File tmpDir = Files.createTempDirectory("test_gathertest").toFile();
         tmpDir.deleteOnExit();
 
         File repoDir = new File(tmpDir, "repo");
@@ -177,18 +166,11 @@ public class TestGatherTestInformation {
     public void testGatherTestInformationWhenErroring() throws IOException {
         long buildId = 208240908; // surli/failingProject build
 
-        Optional<Build> optionalBuild = RepairnatorConfig.getInstance().getJTravis().build().fromId(buildId);
-        assertTrue(optionalBuild.isPresent());
-        Build build = optionalBuild.get();
-        assertThat(build, notNullValue());
-        assertThat(buildId, is(build.getId()));
+        Build build = this.checkBuildAndReturn(buildId, false);
 
-        Path tmpDirPath = Files.createTempDirectory("test_gathertest");
-        File tmpDir = tmpDirPath.toFile();
+        File tmpDir = Files.createTempDirectory("test_gathertest").toFile();
         tmpDir.deleteOnExit();
-        System.out.println("Dirpath : "+tmpDirPath);
-
-        File repoDir = new File(tmpDir, "repo");
+        System.out.println("Dirpath : "+tmpDir.getAbsolutePath());
 
         BuildToBeInspected toBeInspected = new BuildToBeInspected(build, null, ScannedBuildStatus.ONLY_FAIL, "");
 
@@ -216,7 +198,7 @@ public class TestGatherTestInformation {
         String serializedStatus = AbstractDataSerializer.getPrettyPrintState(inspector);
         assertThat(serializedStatus, is("test failure"));
 
-        assertThat(jobStatus.getFailingModulePath(), is(repoDir.getCanonicalPath()));
+        assertThat(jobStatus.getFailingModulePath(), is(tmpDir.getAbsolutePath()+"/repo"));
         assertThat(gatherTestInformation.getNbTotalTests(), is(26));
         assertThat(gatherTestInformation.getNbFailingTests(), is(0));
         assertThat(gatherTestInformation.getNbErroringTests(), is(5));
@@ -234,19 +216,11 @@ public class TestGatherTestInformation {
     public void testGatherTestInformationWhenNotFailing() throws IOException {
         long buildId = 201176013; // surli/failingProject build
 
-        Optional<Build> optionalBuild = RepairnatorConfig.getInstance().getJTravis().build().fromId(buildId);
-        assertTrue(optionalBuild.isPresent());
-        Build build = optionalBuild.get();
-        assertThat(build, notNullValue());
-        assertThat(buildId, is(build.getId()));
+        Build build = this.checkBuildAndReturn(buildId, false);
 
-        Path tmpDirPath = Files.createTempDirectory("test_gathertest");
-        File tmpDir = tmpDirPath.toFile();
+        File tmpDir = Files.createTempDirectory("test_gathertest").toFile();
         tmpDir.deleteOnExit();
-        System.out.println("Dirpath : "+tmpDirPath);
-
-
-        File repoDir = new File(tmpDir, "repo");
+        System.out.println("Dirpath : "+tmpDir.getAbsolutePath());
 
         BuildToBeInspected toBeInspected = new BuildToBeInspected(build, null, ScannedBuildStatus.ONLY_FAIL, "");
 
@@ -293,16 +267,11 @@ public class TestGatherTestInformation {
     public void testGatherTestInformationWhenNotFailingWithPassingContract() throws IOException {
         long buildId = 201176013; // surli/failingProject build
 
-        Optional<Build> optionalBuild = RepairnatorConfig.getInstance().getJTravis().build().fromId(buildId);
-        assertTrue(optionalBuild.isPresent());
-        Build build = optionalBuild.get();
-        assertThat(build, notNullValue());
-        assertThat(buildId, is(build.getId()));
+        Build build = this.checkBuildAndReturn(buildId, false);
 
-        Path tmpDirPath = Files.createTempDirectory("test_gathertest");
-        File tmpDir = tmpDirPath.toFile();
+        File tmpDir = Files.createTempDirectory("test_gathertest").toFile();
         tmpDir.deleteOnExit();
-        System.out.println("Dirpath : "+tmpDirPath);
+        System.out.println("Dirpath : "+tmpDir.getAbsolutePath());
 
         BuildToBeInspected toBeInspected = new BuildToBeInspected(build, null, ScannedBuildStatus.ONLY_FAIL, "");
 
@@ -337,5 +306,15 @@ public class TestGatherTestInformation {
         Set<String> failureNames = jobStatus.getMetrics().getFailureNames();
         assertThat(failureNames.size(), is(0));
         assertThat(jobStatus.getFailureLocations().size(), is(0));
+    }
+
+    private Build checkBuildAndReturn(long buildId, boolean isPR) {
+        Optional<Build> optionalBuild = RepairnatorConfig.getInstance().getJTravis().build().fromId(buildId);
+        assertTrue(optionalBuild.isPresent());
+        Build build = optionalBuild.get();
+        assertThat(build, notNullValue());
+        assertThat(buildId, is(build.getId()));
+        assertThat(build.isPullRequest(), is(isPR));
+        return build;
     }
 }

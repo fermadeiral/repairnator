@@ -53,11 +53,7 @@ public class TestCommitPatch {
         repairnatorConfig.setClean(false);
         repairnatorConfig.setPush(true);
 
-        Optional<Build> optionalBuild = RepairnatorConfig.getInstance().getJTravis().build().fromId(buildId);
-        assertTrue(optionalBuild.isPresent());
-        Build build = optionalBuild.get();
-        assertThat(build, notNullValue());
-        assertThat(buildId, is(build.getId()));
+        Build build = this.checkBuildAndReturn(buildId, false);
 
         Path tmpDirPath = Files.createTempDirectory("test_pushPatch");
         File tmpDir = tmpDirPath.toFile();
@@ -89,5 +85,15 @@ public class TestCommitPatch {
         assertThat(commit.getShortMessage(), containsString("Bug commit"));
 
         assertThat(iterator.hasNext(), is(false));
+    }
+
+    private Build checkBuildAndReturn(long buildId, boolean isPR) {
+        Optional<Build> optionalBuild = RepairnatorConfig.getInstance().getJTravis().build().fromId(buildId);
+        assertTrue(optionalBuild.isPresent());
+        Build build = optionalBuild.get();
+        assertThat(build, notNullValue());
+        assertThat(buildId, is(build.getId()));
+        assertThat(build.isPullRequest(), is(isPR));
+        return build;
     }
 }

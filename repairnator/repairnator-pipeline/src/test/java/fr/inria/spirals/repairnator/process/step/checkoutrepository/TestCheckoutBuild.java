@@ -23,7 +23,6 @@ import org.junit.Test;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
@@ -55,14 +54,9 @@ public class TestCheckoutBuild {
         RepairnatorConfig repairnatorConfig = RepairnatorConfig.getInstance();
         repairnatorConfig.setClean(false);
 
-        Optional<Build> optionalBuild = RepairnatorConfig.getInstance().getJTravis().build().fromId(buildId);
-        assertTrue(optionalBuild.isPresent());
-        Build build = optionalBuild.get();
-        assertThat(build, notNullValue());
-        assertThat(buildId, is(build.getId()));
+        Build build = this.checkBuildAndReturn(buildId, false);
 
-        Path tmpDirPath = Files.createTempDirectory("test_checkout");
-        File tmpDir = tmpDirPath.toFile();
+        File tmpDir = Files.createTempDirectory("test_checkout").toFile();
         tmpDir.deleteOnExit();
 
         BuildToBeInspected toBeInspected = new BuildToBeInspected(build, null, ScannedBuildStatus.ONLY_FAIL, "");
@@ -113,14 +107,9 @@ public class TestCheckoutBuild {
     public void testCheckoutBuildFromPRWithMissingMerge() throws IOException {
         long buildId = 199527447; // surli/failingProject build
 
-        Optional<Build> optionalBuild = RepairnatorConfig.getInstance().getJTravis().build().fromId(buildId);
-        assertTrue(optionalBuild.isPresent());
-        Build build = optionalBuild.get();
-        assertThat(build, notNullValue());
-        assertThat(buildId, is(build.getId()));
+        Build build = this.checkBuildAndReturn(buildId, true);
 
-        Path tmpDirPath = Files.createTempDirectory("test_checkout");
-        File tmpDir = tmpDirPath.toFile();
+        File tmpDir = Files.createTempDirectory("test_checkout").toFile();
         tmpDir.deleteOnExit();
 
         BuildToBeInspected toBeInspected = new BuildToBeInspected(build, null, ScannedBuildStatus.ONLY_FAIL, "");
@@ -157,14 +146,9 @@ public class TestCheckoutBuild {
     public void testCheckoutBuildFromPRWithMerge() throws IOException {
         long buildId = 199923736; // surli/failingProject build
 
-        Optional<Build> optionalBuild = RepairnatorConfig.getInstance().getJTravis().build().fromId(buildId);
-        assertTrue(optionalBuild.isPresent());
-        Build build = optionalBuild.get();
-        assertThat(build, notNullValue());
-        assertThat(buildId, is(build.getId()));
+        Build build = this.checkBuildAndReturn(buildId, true);
 
-        Path tmpDirPath = Files.createTempDirectory("test_checkout");
-        File tmpDir = tmpDirPath.toFile();
+        File tmpDir = Files.createTempDirectory("test_checkout").toFile();
         tmpDir.deleteOnExit();
 
         BuildToBeInspected toBeInspected = new BuildToBeInspected(build, null, ScannedBuildStatus.ONLY_FAIL, "");
@@ -195,14 +179,9 @@ public class TestCheckoutBuild {
     public void testCheckoutBuildFromPROtherRepo() throws IOException {
         long buildId = 196568333; // surli/failingProject build
 
-        Optional<Build> optionalBuild = RepairnatorConfig.getInstance().getJTravis().build().fromId(buildId);
-        assertTrue(optionalBuild.isPresent());
-        Build build = optionalBuild.get();
-        assertThat(build, notNullValue());
-        assertThat(buildId, is(build.getId()));
+        Build build = this.checkBuildAndReturn(buildId, true);
 
-        Path tmpDirPath = Files.createTempDirectory("test_checkout");
-        File tmpDir = tmpDirPath.toFile();
+        File tmpDir = Files.createTempDirectory("test_checkout").toFile();
         tmpDir.deleteOnExit();
 
         BuildToBeInspected toBeInspected = new BuildToBeInspected(build, null, ScannedBuildStatus.ONLY_FAIL, "");
@@ -234,5 +213,15 @@ public class TestCheckoutBuild {
 
         String serializedStatus = AbstractDataSerializer.getPrettyPrintState(inspector);
         assertThat(serializedStatus, is(PipelineState.BUILDNOTCHECKEDOUT.name()));
+    }
+
+    private Build checkBuildAndReturn(long buildId, boolean isPR) {
+        Optional<Build> optionalBuild = RepairnatorConfig.getInstance().getJTravis().build().fromId(buildId);
+        assertTrue(optionalBuild.isPresent());
+        Build build = optionalBuild.get();
+        assertThat(build, notNullValue());
+        assertThat(buildId, is(build.getId()));
+        assertThat(build.isPullRequest(), is(isPR));
+        return build;
     }
 }

@@ -18,7 +18,6 @@ import org.junit.Test;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -47,14 +46,9 @@ public class TestBuildProject {
     public void testBuildProject() throws IOException {
         long buildId = 207924136; // surli/failingProject build
 
-        Optional<Build> optionalBuild = RepairnatorConfig.getInstance().getJTravis().build().fromId(buildId);
-        assertTrue(optionalBuild.isPresent());
-        Build build = optionalBuild.get();
-        assertThat(build, notNullValue());
-        assertThat(buildId, is(build.getId()));
+        Build build = this.checkBuildAndReturn(buildId, false);
 
-        Path tmpDirPath = Files.createTempDirectory("test_build");
-        File tmpDir = tmpDirPath.toFile();
+        File tmpDir = Files.createTempDirectory("test_build").toFile();
         tmpDir.deleteOnExit();
 
         BuildToBeInspected toBeInspected = new BuildToBeInspected(build, null, ScannedBuildStatus.ONLY_FAIL, "");
@@ -83,14 +77,9 @@ public class TestBuildProject {
     public void testBuildProjectWithPomNotInRoot() throws IOException {
         long buildId = 218036343;
 
-        Optional<Build> optionalBuild = RepairnatorConfig.getInstance().getJTravis().build().fromId(buildId);
-        assertTrue(optionalBuild.isPresent());
-        Build build = optionalBuild.get();
-        assertThat(build, notNullValue());
-        assertThat(buildId, is(build.getId()));
+        Build build = this.checkBuildAndReturn(buildId, false);
 
-        Path tmpDirPath = Files.createTempDirectory("test_build");
-        File tmpDir = tmpDirPath.toFile();
+        File tmpDir = Files.createTempDirectory("test_build").toFile();
         tmpDir.deleteOnExit();
 
         BuildToBeInspected toBeInspected = new BuildToBeInspected(build, null, ScannedBuildStatus.ONLY_FAIL, "");
@@ -114,5 +103,15 @@ public class TestBuildProject {
         for (StepStatus stepStatus : stepStatusList) {
             assertThat(stepStatus.isSuccess(), is(true));
         }
+    }
+
+    private Build checkBuildAndReturn(long buildId, boolean isPR) {
+        Optional<Build> optionalBuild = RepairnatorConfig.getInstance().getJTravis().build().fromId(buildId);
+        assertTrue(optionalBuild.isPresent());
+        Build build = optionalBuild.get();
+        assertThat(build, notNullValue());
+        assertThat(buildId, is(build.getId()));
+        assertThat(build.isPullRequest(), is(isPR));
+        return build;
     }
 }

@@ -31,11 +31,9 @@ import org.junit.Test;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.*;
 
-import static org.hamcrest.CoreMatchers.containsString;
-import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.*;
 import static org.junit.Assert.*;
 import static org.mockito.Matchers.anyListOf;
 import static org.mockito.Matchers.anyString;
@@ -61,6 +59,7 @@ public class TestProjectInspector {
         }
 
         RepairnatorConfig config = RepairnatorConfig.getInstance();
+        config.setLauncherMode(LauncherMode.REPAIR);
         config.setZ3solverPath(solverPath);
         config.setPush(true);
         config.setPushRemoteRepo("");
@@ -82,13 +81,10 @@ public class TestProjectInspector {
     public void testPatchFailingProject() throws IOException, GitAPIException {
         long buildId = 208897371; // surli/failingProject only-one-failing
 
-        Path tmpDirPath = Files.createTempDirectory("test_complete");
-        File tmpDir = tmpDirPath.toFile();
+        File tmpDir = Files.createTempDirectory("test_complete").toFile();
         tmpDir.deleteOnExit();
 
-        Optional<Build> optionalBuild = RepairnatorConfig.getInstance().getJTravis().build().fromId(buildId);
-        assertTrue(optionalBuild.isPresent());
-        Build failingBuild = optionalBuild.get();
+        Build failingBuild = this.checkBuildAndReturn(buildId, false);
 
         BuildToBeInspected buildToBeInspected = new BuildToBeInspected(failingBuild, null, ScannedBuildStatus.ONLY_FAIL, "test");
 
@@ -106,9 +102,6 @@ public class TestProjectInspector {
         serializers.add(new InspectorSerializer(serializerEngines));
         serializers.add(new PatchesSerializer(serializerEngines));
         serializers.add(new ToolDiagnosticSerializer(serializerEngines));
-
-        RepairnatorConfig config = RepairnatorConfig.getInstance();
-        config.setLauncherMode(LauncherMode.REPAIR);
 
         ProjectInspector inspector = new ProjectInspector(buildToBeInspected, tmpDir.getAbsolutePath(), serializers, notifiers);
         inspector.setPatchNotifier(new PatchNotifier(notifierEngines));
@@ -162,13 +155,10 @@ public class TestProjectInspector {
     public void testFailingProjectNotBuildable() throws IOException {
         long buildId = 228303218; // surli/failingProject only-one-failing
 
-        Path tmpDirPath = Files.createTempDirectory("test_complete2");
-        File tmpDir = tmpDirPath.toFile();
+        File tmpDir = Files.createTempDirectory("test_complete2").toFile();
         tmpDir.deleteOnExit();
 
-        Optional<Build> optionalBuild = RepairnatorConfig.getInstance().getJTravis().build().fromId(buildId);
-        assertTrue(optionalBuild.isPresent());
-        Build failingBuild = optionalBuild.get();
+        Build failingBuild = this.checkBuildAndReturn(buildId, false);
 
         BuildToBeInspected buildToBeInspected = new BuildToBeInspected(failingBuild, null, ScannedBuildStatus.ONLY_FAIL, "test");
 
@@ -180,9 +170,6 @@ public class TestProjectInspector {
         serializerEngines.add(serializerEngine);
 
         serializers.add(new InspectorSerializer(serializerEngines));
-
-        RepairnatorConfig config = RepairnatorConfig.getInstance();
-        config.setLauncherMode(LauncherMode.REPAIR);
 
         ProjectInspector inspector = new ProjectInspector(buildToBeInspected, tmpDir.getAbsolutePath(), serializers, notifiers);
         inspector.run();
@@ -204,6 +191,16 @@ public class TestProjectInspector {
 
         verify(serializerEngine, times(1)).serialize(anyListOf(SerializedData.class), eq(SerializerType.INSPECTOR));
 
+    }
+
+    private Build checkBuildAndReturn(long buildId, boolean isPR) {
+        Optional<Build> optionalBuild = RepairnatorConfig.getInstance().getJTravis().build().fromId(buildId);
+        assertTrue(optionalBuild.isPresent());
+        Build build = optionalBuild.get();
+        assertThat(build, notNullValue());
+        assertThat(buildId, is(build.getId()));
+        assertThat(build.isPullRequest(), is(isPR));
+        return build;
     }
 
     private void checkStepStatus(List<StepStatus> statuses, Map<Class<? extends AbstractStep>,StepStatus.StatusKind> expectedValues) {

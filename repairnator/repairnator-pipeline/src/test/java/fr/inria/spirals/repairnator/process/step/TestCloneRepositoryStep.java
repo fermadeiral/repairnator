@@ -19,7 +19,6 @@ import org.junit.Test;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
 
@@ -46,14 +45,9 @@ public class TestCloneRepositoryStep {
     public void testCloneMasterBuild() throws IOException {
         long buildId = 207924136; // surli/failingProject build
 
-        Optional<Build> optionalBuild = RepairnatorConfig.getInstance().getJTravis().build().fromId(buildId);
-        assertTrue(optionalBuild.isPresent());
-        Build build = optionalBuild.get();
-        assertThat(build, notNullValue());
-        assertThat(buildId, is(build.getId()));
+        Build build = this.checkBuildAndReturn(buildId, false);
 
-        Path tmpDirPath = Files.createTempDirectory("test_clone");
-        File tmpDir = tmpDirPath.toFile();
+        File tmpDir = Files.createTempDirectory("test_clone").toFile();
         tmpDir.deleteOnExit();
 
         BuildToBeInspected toBeInspected = new BuildToBeInspected(build, null, ScannedBuildStatus.ONLY_FAIL, "");
@@ -87,14 +81,9 @@ public class TestCloneRepositoryStep {
     public void testCloneBuildWithSubmodule() throws IOException {
         long buildId = 355839305; // surli/failingProject build
 
-        Optional<Build> optionalBuild = RepairnatorConfig.getInstance().getJTravis().build().fromId(buildId);
-        assertTrue(optionalBuild.isPresent());
-        Build build = optionalBuild.get();
-        assertThat(build, notNullValue());
-        assertThat(buildId, is(build.getId()));
+        Build build = this.checkBuildAndReturn(buildId, false);
 
-        Path tmpDirPath = Files.createTempDirectory("test_clone");
-        File tmpDir = tmpDirPath.toFile();
+        File tmpDir = Files.createTempDirectory("test_clone").toFile();
         tmpDir.deleteOnExit();
 
         BuildToBeInspected toBeInspected = new BuildToBeInspected(build, null, ScannedBuildStatus.ONLY_FAIL, "");
@@ -112,7 +101,17 @@ public class TestCloneRepositoryStep {
         assertThat(cloneStatus.getStep(), is(cloneStep));
         assertThat(cloneStatus.isSuccess(), is(true));
 
-        File licenceInSubmodule = new File(tmpDirPath.toFile(), "repo/grakn-spec/LICENSE");
+        File licenceInSubmodule = new File(tmpDir, "repo/grakn-spec/LICENSE");
         assertThat("Submodule are not supported", licenceInSubmodule.exists(), is(true));
+    }
+
+    private Build checkBuildAndReturn(long buildId, boolean isPR) {
+        Optional<Build> optionalBuild = RepairnatorConfig.getInstance().getJTravis().build().fromId(buildId);
+        assertTrue(optionalBuild.isPresent());
+        Build build = optionalBuild.get();
+        assertThat(build, notNullValue());
+        assertThat(buildId, is(build.getId()));
+        assertThat(build.isPullRequest(), is(isPR));
+        return build;
     }
 }

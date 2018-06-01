@@ -24,7 +24,6 @@ import org.junit.Test;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
@@ -53,22 +52,10 @@ public class TestCheckoutBuggyBuildSourceCode {
         long previousBuildId = 218213030;
         ScannedBuildStatus status = ScannedBuildStatus.PASSING_AND_PASSING_WITH_TEST_CHANGES;
 
-        Optional<Build> optionalBuild = RepairnatorConfig.getInstance().getJTravis().build().fromId(buildId);
-        assertTrue(optionalBuild.isPresent());
-        Build build = optionalBuild.get();
-        assertThat(build, notNullValue());
-        assertThat(buildId, is(build.getId()));
-        assertThat(build.isPullRequest(), is(false));
+        Build build = this.checkBuildAndReturn(buildId, false);
+        Build previousBuild = this.checkBuildAndReturn(previousBuildId, false);
 
-        Optional<Build> optionalBuild2 = RepairnatorConfig.getInstance().getJTravis().build().fromId(previousBuildId);
-        assertTrue(optionalBuild2.isPresent());
-        Build previousBuild = optionalBuild2.get();
-        assertThat(previousBuild, notNullValue());
-        assertThat(previousBuild.getId(), is(previousBuildId));
-        assertThat(previousBuild.isPullRequest(), is(false));
-
-        Path tmpDirPath = Files.createTempDirectory("test_checkoutprevious");
-        File tmpDir = tmpDirPath.toFile();
+        File tmpDir = Files.createTempDirectory("test_checkoutprevious").toFile();
         tmpDir.deleteOnExit();
 
         BuildToBeInspected toBeInspected = new BuildToBeInspected(previousBuild, build, status, "");
@@ -147,22 +134,10 @@ public class TestCheckoutBuggyBuildSourceCode {
         long previousBuildId = 222016611;
         ScannedBuildStatus status = ScannedBuildStatus.PASSING_AND_PASSING_WITH_TEST_CHANGES;
 
-        Optional<Build> optionalBuild = RepairnatorConfig.getInstance().getJTravis().build().fromId(buildId);
-        assertTrue(optionalBuild.isPresent());
-        Build build = optionalBuild.get();
-        assertThat(build, notNullValue());
-        assertThat(buildId, is(build.getId()));
-        assertThat(build.isPullRequest(), is(false));
+        Build build = this.checkBuildAndReturn(buildId, false);
+        Build previousBuild = this.checkBuildAndReturn(previousBuildId, false);
 
-        Optional<Build> optionalBuild2 = RepairnatorConfig.getInstance().getJTravis().build().fromId(previousBuildId);
-        assertTrue(optionalBuild2.isPresent());
-        Build previousBuild = optionalBuild2.get();
-        assertThat(previousBuild, notNullValue());
-        assertThat(previousBuild.getId(), is(previousBuildId));
-        assertThat(previousBuild.isPullRequest(), is(false));
-
-        Path tmpDirPath = Files.createTempDirectory("test_checkoutprevious");
-        File tmpDir = tmpDirPath.toFile();
+        File tmpDir = Files.createTempDirectory("test_checkoutprevious").toFile();
         tmpDir.deleteOnExit();
 
         BuildToBeInspected toBeInspected = new BuildToBeInspected(previousBuild, build, status, "");
@@ -241,22 +216,10 @@ public class TestCheckoutBuggyBuildSourceCode {
         long previousBuildId = 222209171;
         ScannedBuildStatus status = ScannedBuildStatus.PASSING_AND_PASSING_WITH_TEST_CHANGES;
 
-        Optional<Build> optionalBuild = RepairnatorConfig.getInstance().getJTravis().build().fromId(buildId);
-        assertTrue(optionalBuild.isPresent());
-        Build build = optionalBuild.get();
-        assertThat(build, notNullValue());
-        assertThat(buildId, is(build.getId()));
-        assertThat(build.isPullRequest(), is(true));
+        Build build = this.checkBuildAndReturn(buildId, true);
+        Build previousBuild = this.checkBuildAndReturn(previousBuildId, true);
 
-        Optional<Build> optionalBuild2 = RepairnatorConfig.getInstance().getJTravis().build().fromId(previousBuildId);
-        assertTrue(optionalBuild2.isPresent());
-        Build previousBuild = optionalBuild2.get();
-        assertThat(previousBuild, notNullValue());
-        assertThat(previousBuild.getId(), is(previousBuildId));
-        assertThat(previousBuild.isPullRequest(), is(true));
-
-        Path tmpDirPath = Files.createTempDirectory("test_checkoutprevious");
-        File tmpDir = tmpDirPath.toFile();
+        File tmpDir = Files.createTempDirectory("test_checkoutprevious").toFile();
         tmpDir.deleteOnExit();
 
         BuildToBeInspected toBeInspected = new BuildToBeInspected(previousBuild, build, status, "");
@@ -319,5 +282,15 @@ public class TestCheckoutBuggyBuildSourceCode {
         }
 
         assertThat(foundUndoSourceCodeCommit, is(true));
+    }
+
+    private Build checkBuildAndReturn(long buildId, boolean isPR) {
+        Optional<Build> optionalBuild = RepairnatorConfig.getInstance().getJTravis().build().fromId(buildId);
+        assertTrue(optionalBuild.isPresent());
+        Build build = optionalBuild.get();
+        assertThat(build, notNullValue());
+        assertThat(buildId, is(build.getId()));
+        assertThat(build.isPullRequest(), is(isPR));
+        return build;
     }
 }

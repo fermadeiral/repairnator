@@ -19,7 +19,6 @@ import org.junit.Test;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
 
@@ -46,14 +45,10 @@ public class TestComputeTestDir {
     @Test
     public void testComputeTestDirWithReflexiveReferences() throws IOException {
         long buildId = 345990212;
-        Optional<Build> optionalBuild = RepairnatorConfig.getInstance().getJTravis().build().fromId(buildId);
-        assertTrue(optionalBuild.isPresent());
-        Build build = optionalBuild.get();
-        assertThat(build, notNullValue());
-        assertThat(buildId, is(build.getId()));
 
-        Path tmpDirPath = Files.createTempDirectory("computetestdir");
-        File tmpDir = tmpDirPath.toFile();
+        Build build = this.checkBuildAndReturn(buildId, false);
+
+        File tmpDir = Files.createTempDirectory("computetestdir").toFile();
         tmpDir.deleteOnExit();
 
         File repoDir = new File(tmpDir, "repo");
@@ -85,5 +80,15 @@ public class TestComputeTestDir {
             }
 
         }
+    }
+
+    private Build checkBuildAndReturn(long buildId, boolean isPR) {
+        Optional<Build> optionalBuild = RepairnatorConfig.getInstance().getJTravis().build().fromId(buildId);
+        assertTrue(optionalBuild.isPresent());
+        Build build = optionalBuild.get();
+        assertThat(build, notNullValue());
+        assertThat(buildId, is(build.getId()));
+        assertThat(build.isPullRequest(), is(isPR));
+        return build;
     }
 }

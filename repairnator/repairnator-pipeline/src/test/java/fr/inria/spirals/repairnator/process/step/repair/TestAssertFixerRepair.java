@@ -24,7 +24,6 @@ import org.junit.Test;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -45,15 +44,10 @@ public class TestAssertFixerRepair {
     public void testAssertFixerFixes() throws IOException {
         long buildId = 365127838; // surli/failingProject build
 
-        Optional<Build> optionalBuild = RepairnatorConfig.getInstance().getJTravis().build().fromId(buildId);
-        assertTrue(optionalBuild.isPresent());
-        Build build = optionalBuild.get();
-        assertThat(build, notNullValue());
-        assertThat(buildId, is(build.getId()));
+        Build build = this.checkBuildAndReturn(buildId, false);
 
         RepairnatorConfig.getInstance().setRepairTools(Collections.singleton(AssertFixerRepair.TOOL_NAME));
-        Path tmpDirPath = Files.createTempDirectory("test_assertfixer");
-        File tmpDir = tmpDirPath.toFile();
+        File tmpDir = Files.createTempDirectory("test_assertfixer").toFile();
         tmpDir.deleteOnExit();
 
         BuildToBeInspected toBeInspected = new BuildToBeInspected(build, null, ScannedBuildStatus.ONLY_FAIL, "");
@@ -90,5 +84,15 @@ public class TestAssertFixerRepair {
         List<RepairPatch> allPatches = inspector.getJobStatus().getAllPatches();
         assertThat(allPatches.size(), is(4));
         assertThat(inspector.getJobStatus().getToolDiagnostic().get(assertFixerRepair.getRepairToolName()), notNullValue());
+    }
+
+    private Build checkBuildAndReturn(long buildId, boolean isPR) {
+        Optional<Build> optionalBuild = RepairnatorConfig.getInstance().getJTravis().build().fromId(buildId);
+        assertTrue(optionalBuild.isPresent());
+        Build build = optionalBuild.get();
+        assertThat(build, notNullValue());
+        assertThat(buildId, is(build.getId()));
+        assertThat(build.isPullRequest(), is(isPR));
+        return build;
     }
 }
