@@ -81,7 +81,7 @@ public class TestCloneRepositoryStep {
     public void testCloneBuildWithSubmodule() throws IOException {
         long buildId = 355839305; // surli/failingProject build
 
-        Build build = this.checkBuildAndReturn(buildId, false);
+        Build build = this.checkBuildAndReturn(buildId, true);
 
         File tmpDir = Files.createTempDirectory("test_clone").toFile();
         tmpDir.deleteOnExit();

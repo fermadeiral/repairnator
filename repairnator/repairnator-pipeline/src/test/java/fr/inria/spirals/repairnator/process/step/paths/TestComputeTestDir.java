@@ -46,7 +46,7 @@ public class TestComputeTestDir {
     public void testComputeTestDirWithReflexiveReferences() throws IOException {
         long buildId = 345990212;
 
-        Build build = this.checkBuildAndReturn(buildId, false);
+        Build build = this.checkBuildAndReturn(buildId, true);
 
         File tmpDir = Files.createTempDirectory("computetestdir").toFile();
         tmpDir.deleteOnExit();

@@ -284,7 +284,7 @@ public class TestComputeSourceDir {
     public void testComputeSourceDirWithReflexiveReferences() throws IOException {
         long buildId = 345990212;
 
-        Build build = this.checkBuildAndReturn(buildId, false);
+        Build build = this.checkBuildAndReturn(buildId, true);
 
         File tmpDir = Files.createTempDirectory("test_computesourcedirOverflow").toFile();
         tmpDir.deleteOnExit();

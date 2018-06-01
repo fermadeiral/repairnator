@@ -84,7 +84,7 @@ public class TestInitRepoToPush {
     public void testInitRepoShouldRemoveNotificationInTravisYML() throws IOException {
         long buildId = 331637757;
 
-        Build build = this.checkBuildAndReturn(buildId, false);
+        Build build = this.checkBuildAndReturn(buildId, true);
 
         File tmpDir = Files.createTempDirectory("test_initRepoToPush").toFile();
         tmpDir.deleteOnExit();
