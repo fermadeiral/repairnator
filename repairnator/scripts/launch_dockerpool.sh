@@ -51,7 +51,15 @@ if [ -z "$REPAIRNATOR_INITIALIZED" ]; then
 fi
 
 echo "Copy jar into $REPAIRNATOR_DOCKERPOOL_DEST_JAR"
-mvn org.apache.maven.plugins:maven-dependency-plugin:2.8:get -Dartifact=fr.inria.repairnator:repairnator-dockerpool:$DOCKERPOOL_VERSION:jar:jar-with-dependencies -DremoteRepositories=ossSnapshot::::https://oss.sonatype.org/content/repositories/snapshots -Ddest=$REPAIRNATOR_DOCKERPOOL_DEST_JAR
+#mvn org.apache.maven.plugins:maven-dependency-plugin:2.8:get -Dartifact=fr.inria.repairnator:repairnator-dockerpool:$DOCKERPOOL_VERSION:jar:jar-with-dependencies -DremoteRepositories=ossSnapshot::::https://oss.sonatype.org/content/repositories/snapshots -Ddest=$REPAIRNATOR_DOCKERPOOL_DEST_JAR
+
+git clone https://github.com/fermadeiral/repairnator.git repairnator-tmp
+cd repairnator-tmp/repairnator
+git checkout prepare-run-bears
+mvn clean install -DskipTests=true
+cp repairnator-dockerpool/target/repairnator-dockerpool-*-with-dependencies.jar $REPAIRNATOR_DOCKERPOOL_DEST_JAR
+cd ../../
+rm -rf repairnator-tmp
 
 if [ "$BEARS_MODE" -eq 1 ]; then
     DOCKER_TAG=$DOCKER_TAG_BEARS
