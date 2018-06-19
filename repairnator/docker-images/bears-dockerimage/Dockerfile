@@ -1,22 +1,40 @@
 FROM maven:3.3.9-jdk-8
 
+ARG HOME=/home/maven/
+
+# Configure Maven User
+
+ENV MAVEN_CONFIG ".m2"
+
+RUN useradd --create-home --shell /bin/bash --user-group maven
+
+WORKDIR $HOME
+
+RUN chown -R maven:maven $HOME
+RUN mkdir -p .m2
+
+# Repairnator
+
 LABEL Description="Repairnator Pipeline docker image" Vendor="Spirals" Version="0.0.0"
 
 VOLUME ["/var/log/"]
 
-COPY z3_for_linux /root/
-COPY logback.xml /root/
-COPY configure_git.sh /root/
-COPY build_repairnator4Bears.sh /root/
-COPY pipeline_launcher4Bears.sh /root/
-COPY version.ini /root/
+COPY z3_for_linux $HOME
+COPY logback.xml $HOME
+COPY version.ini $HOME
+COPY configure_git.sh $HOME
+COPY build_repairnator4Bears.sh $HOME
+COPY pipeline_launcher4Bears.sh $HOME
 
-RUN chmod +x /root/*.sh
+RUN chmod +x $HOME/*.sh
 RUN echo "Europe/Paris" > /etc/timezone 
 RUN apt-get update 
 RUN apt-get install cloc -y 
-RUN /root/configure_git.sh 
-RUN /root/build_repairnator4Bears.sh
+
+RUN $HOME/configure_git.sh 
+RUN $HOME/build_repairnator4Bears.sh
+
+USER maven
 
 ENV M2_HOME=$MAVEN_HOME
 ENV GITHUB_OAUTH=
@@ -33,5 +51,4 @@ ENV PUSH_URL=
 ENV SMTP_SERVER=
 ENV NOTIFY_TO=
 
-WORKDIR /root
-ENTRYPOINT /root/pipeline_launcher4Bears.sh
+ENTRYPOINT $HOME/pipeline_launcher4Bears.sh
