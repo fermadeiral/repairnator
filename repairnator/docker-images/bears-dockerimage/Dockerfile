@@ -26,6 +26,7 @@ COPY configure_git.sh $HOME
 COPY build_repairnator4Bears.sh $HOME
 COPY pipeline_launcher4Bears.sh $HOME
 
+RUN chmod 777 /var/log/
 RUN chmod +x $HOME/*.sh
 RUN echo "Europe/Paris" > /etc/timezone 
 RUN apt-get update 
