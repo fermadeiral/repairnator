@@ -14,8 +14,8 @@ COPY version.ini /root/
 RUN chmod +x /root/*.sh
 RUN echo "Europe/Paris" > /etc/timezone 
 RUN apt-get update 
-RUN apt-get install cloc -y 
-RUN /root/configure_git.sh 
+RUN apt-get install cloc -y
+RUN /root/configure_git.sh
 RUN /root/build_repairnator4Bears.sh
 
 ENV M2_HOME=$MAVEN_HOME
