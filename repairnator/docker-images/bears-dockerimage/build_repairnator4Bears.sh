@@ -5,14 +5,13 @@ set -e
 #PIPELINE_VERSION=`cat /root/version.ini`
 #mvn org.apache.maven.plugins:maven-dependency-plugin:2.8:get -Dartifact=fr.inria.repairnator:repairnator-pipeline:$PIPELINE_VERSION:jar:jar-with-dependencies -DremoteRepositories=ossSnapshot::::https://oss.sonatype.org/content/repositories/snapshots -Ddest=/root/repairnator-pipeline.jar
 
-cd 
+cd /root
 git clone https://github.com/fermadeiral/repairnator.git
 cd repairnator/repairnator
 git checkout prepare-run-bears
 mvn clean install -DskipTests=true
-cp repairnator-pipeline/target/repairnator-pipeline-*-with-dependencies.jar ~/repairnator-pipeline.jar
-cd 
+cp repairnator-pipeline/target/repairnator-pipeline-*-with-dependencies.jar /root/repairnator-pipeline.jar
 
 echo "Pipeline version:"
-java -jar repairnator-pipeline.jar -h 2> /dev/null || true # We don't want this call to fail the script
-echo "Repairnator-pipeline jar file installed in $HOME directory"
+java -jar /root/repairnator-pipeline.jar -h 2> /dev/null || true # We don't want this call to fail the script
+echo "Repairnator-pipeline jar file installed in /root directory"
