@@ -8,15 +8,24 @@ COPY z3_for_linux /root/
 COPY logback.xml /root/
 COPY configure_git.sh /root/
 COPY build_repairnator4Bears.sh /root/
-COPY pipeline_launcher4Bears.sh /root/
 COPY version.ini /root/
 
 RUN chmod +x /root/*.sh
-RUN echo "Europe/Paris" > /etc/timezone 
-RUN apt-get update 
-RUN apt-get install cloc -y 
-RUN /root/configure_git.sh 
+RUN echo "Europe/Paris" > /etc/timezone
+RUN apt-get update
+RUN apt-get install cloc -y
+RUN /root/configure_git.sh
 RUN /root/build_repairnator4Bears.sh
+
+COPY pipeline_launcher4Bears.sh /root/
+RUN chmod +x /root/*.sh
+
+RUN apt-get install -y software-properties-common
+RUN add-apt-repository -y  ppa:git-core/ppa
+RUN sed -i -e 's/jessie/xenial/g' /etc/apt/sources.list.d/git-core-ppa-jessie.list
+RUN echo "deb http://ftp.debian.org/debian/ stable main contrib non-free" > /etc/apt/sources.list
+RUN apt-get update
+RUN apt-get install -y git
 
 ENV M2_HOME=$MAVEN_HOME
 ENV GITHUB_OAUTH=
