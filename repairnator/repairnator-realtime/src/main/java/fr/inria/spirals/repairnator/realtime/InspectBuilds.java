@@ -5,7 +5,6 @@ import fr.inria.jtravis.entities.StateType;
 import fr.inria.spirals.repairnator.BuildToBeInspected;
 import fr.inria.spirals.repairnator.config.RepairnatorConfig;
 import fr.inria.spirals.repairnator.realtime.serializer.WatchedBuildSerializer;
-import fr.inria.spirals.repairnator.states.BearsMode;
 import fr.inria.spirals.repairnator.states.ScannedBuildStatus;
 import org.apache.commons.collections4.queue.CircularFifoQueue;
 import org.kohsuke.github.*;
