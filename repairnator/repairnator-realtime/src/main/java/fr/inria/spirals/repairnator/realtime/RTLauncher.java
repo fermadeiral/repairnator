@@ -37,7 +37,7 @@ public class RTLauncher {
         JSAP jsap = this.defineArgs();
         JSAPResult arguments = jsap.parse(args);
         LauncherUtils.checkArguments(jsap, arguments, LauncherType.REALTIME);
-        this.launcherMode = LauncherMode.REPAIR;
+        this.launcherMode = LauncherMode.BEARS;
 
         this.initConfig(arguments);
         this.initSerializerEngines();

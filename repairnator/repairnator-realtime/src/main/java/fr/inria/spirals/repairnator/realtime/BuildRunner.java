@@ -1,6 +1,7 @@
 package fr.inria.spirals.repairnator.realtime;
 
 import fr.inria.jtravis.entities.Build;
+import fr.inria.spirals.repairnator.BuildToBeInspected;
 import fr.inria.spirals.repairnator.InputBuildId;
 import fr.inria.spirals.repairnator.config.RepairnatorConfig;
 import fr.inria.spirals.repairnator.docker.DockerHelper;
@@ -23,7 +24,7 @@ public class BuildRunner extends AbstractPoolManager {
     private static final Logger LOGGER = LoggerFactory.getLogger(BuildRunner.class);
     private static final int DELAY_BETWEEN_DOCKER_IMAGE_REFRESH = 60; // in minutes
     private int nbThreads;
-    private Deque<Build> waitingBuilds;
+    private Deque<BuildToBeInspected> waitingBuilds;
     private ExecutorService executorService;
     private String dockerImageId;
     private String dockerImageName;
@@ -69,18 +70,22 @@ public class BuildRunner extends AbstractPoolManager {
         return this.submittedRunnablePipelineContainers.size();
     }
 
-    public void submitBuild(Build build) {
+    public void submitBuild(BuildToBeInspected build) {
         if (this.limitDateNextRetrieveDockerImage.before(new Date())) {
             this.refreshDockerImage();
         }
         if (getRunning() < this.nbThreads) {
-            LOGGER.info("Build (id: "+build.getId()+") immediately submitted for running.");
-            this.executorService.submit(this.submitBuild(this.dockerImageId, new InputBuildId(build.getId())));
+            LOGGER.info("Build (id: "+build.getBuggyBuild().getId()+") immediately submitted for running.");
+            if (build.getPatchedBuild() != null) {
+                this.executorService.submit(this.submitBuild(this.dockerImageId, new InputBuildId(build.getBuggyBuild().getId(), build.getPatchedBuild().getId())));
+            } else {
+                this.executorService.submit(this.submitBuild(this.dockerImageId, new InputBuildId(build.getBuggyBuild().getId())));
+            }
         } else {
-            LOGGER.info("All threads currently running (Limit: "+this.nbThreads+"). Add build (id: "+build.getId()+") to wait list");
+            LOGGER.info("All threads currently running (Limit: "+this.nbThreads+"). Add build (id: "+build.getBuggyBuild().getId()+") to wait list");
             if (this.waitingBuilds.size() == this.nbThreads) {
-                Build b = this.waitingBuilds.removeLast();
-                LOGGER.debug("Remove oldest build (id: "+b.getId()+")");
+                BuildToBeInspected b = this.waitingBuilds.removeLast();
+                LOGGER.debug("Remove oldest build (id: "+b.getBuggyBuild().getId()+")");
             }
             this.waitingBuilds.push(build);
         }
@@ -102,7 +107,7 @@ public class BuildRunner extends AbstractPoolManager {
         LOGGER.info("Build (id: "+pipelineContainer.getInputBuildId().getBuggyBuildId()+") has finished.");
         super.removeSubmittedRunnablePipelineContainer(pipelineContainer);
         if (!this.waitingBuilds.isEmpty()) {
-            Build build = this.waitingBuilds.pollFirst();
+            BuildToBeInspected build = this.waitingBuilds.pollFirst();
             this.submitBuild(build);
         }
     }

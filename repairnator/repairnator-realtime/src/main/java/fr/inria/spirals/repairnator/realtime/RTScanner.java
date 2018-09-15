@@ -7,10 +7,12 @@ import fr.inria.jtravis.entities.Job;
 import fr.inria.jtravis.entities.Log;
 import fr.inria.jtravis.entities.Repository;
 import fr.inria.jtravis.entities.StateType;
+import fr.inria.spirals.repairnator.BuildToBeInspected;
 import fr.inria.spirals.repairnator.config.RepairnatorConfig;
 import fr.inria.spirals.repairnator.notifier.EndProcessNotifier;
 import fr.inria.spirals.repairnator.realtime.serializer.BlacklistedSerializer;
 import fr.inria.spirals.repairnator.serializer.engines.SerializerEngine;
+import fr.inria.spirals.repairnator.states.LauncherMode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -275,9 +277,9 @@ public class RTScanner {
     /**
      * This method submits a build to the build runner if and only if the build contained failing tests.
      */
-    public void submitBuildToExecution(Build build) {
+    public void submitBuildToExecution(BuildToBeInspected build) {
         boolean failing = false;
-        List<Job> jobs = build.getJobs();
+        List<Job> jobs = build.getBuggyBuild().getJobs();
         if (jobs != null) {
             for (Job job : jobs) {
                 Optional<Log> optionalLog = job.getLog();
@@ -291,11 +293,11 @@ public class RTScanner {
             }
         }
 
-        if (failing) {
-            LOGGER.info("Failing or erroring tests has been found in build (id: "+build.getId()+")");
+        if (failing || RepairnatorConfig.getInstance().getLauncherMode() == LauncherMode.BEARS) {
+            LOGGER.info("Failing or erroring tests has been found in build (id: "+build.getBuggyBuild().getId()+")");
             this.buildRunner.submitBuild(build);
         } else {
-            LOGGER.info("No failing or erroring test has been found in build (id: "+build.getId()+")");
+            LOGGER.info("No failing or erroring test has been found in build (id: "+build.getBuggyBuild().getId()+")");
         }
     }
 

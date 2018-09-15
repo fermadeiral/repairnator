@@ -2,13 +2,20 @@ package fr.inria.spirals.repairnator.realtime;
 
 import fr.inria.jtravis.entities.Build;
 import fr.inria.jtravis.entities.StateType;
+import fr.inria.spirals.repairnator.BuildToBeInspected;
 import fr.inria.spirals.repairnator.config.RepairnatorConfig;
 import fr.inria.spirals.repairnator.realtime.serializer.WatchedBuildSerializer;
+import fr.inria.spirals.repairnator.states.BearsMode;
+import fr.inria.spirals.repairnator.states.ScannedBuildStatus;
 import org.apache.commons.collections4.queue.CircularFifoQueue;
+import org.kohsuke.github.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.Deque;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentLinkedDeque;
 
 /**
@@ -103,11 +110,33 @@ public class InspectBuilds implements Runnable {
                     if (build.getFinishedAt() != null) {
                         LOGGER.debug("Build finished (id:"+build.getId()+" | Status: "+build.getState()+")");
 
-                        // we check that the build is indeed failing
-                        if (build.getState() == StateType.FAILED) {
+                        if (build.getState() == StateType.PASSED) {
 
-                            // if it's the case we submit it
-                            this.rtScanner.submitBuildToExecution(build);
+                            Optional<Build> optionalBeforeBuild = RepairnatorConfig.getInstance().getJTravis().build().getBefore(build, true);
+                            if (optionalBeforeBuild.isPresent()) {
+                                Build previousBuild = optionalBeforeBuild.get();
+                                LOGGER.debug("Previous build: " + previousBuild.getId());
+
+                                BuildToBeInspected buildToBeInspected = null;
+
+                                if (previousBuild.getState() == StateType.FAILED && thereIsDiffOnJavaFile(build, previousBuild)) {
+                                    LOGGER.debug("The pair "+previousBuild.getId()+" ["+previousBuild.getState()+"], "+build.getId()+" ["+build.getState()+"] is interesting to be inspected.");
+                                    buildToBeInspected = new BuildToBeInspected(previousBuild, build, ScannedBuildStatus.FAILING_AND_PASSING, RepairnatorConfig.getInstance().getRunId());
+                                } else {
+                                    if (previousBuild.getState() == StateType.PASSED && thereIsDiffOnJavaFile(build, previousBuild) && thereIsDiffOnTests(build, previousBuild)) {
+                                        LOGGER.debug("The pair "+previousBuild.getId()+" ["+previousBuild.getState()+"], "+build.getId()+" ["+build.getState()+"] is interesting to be inspected.");
+                                        buildToBeInspected = new BuildToBeInspected(previousBuild, build, ScannedBuildStatus.PASSING_AND_PASSING_WITH_TEST_CHANGES, RepairnatorConfig.getInstance().getRunId());
+                                    } else {
+                                        LOGGER.debug("The pair "+previousBuild.getId()+" ["+previousBuild.getState()+"], "+build.getId()+" ["+build.getState()+"] is NOT interesting to be inspected.");
+                                    }
+                                }
+
+                                if (buildToBeInspected != null) {
+                                    this.rtScanner.submitBuildToExecution(buildToBeInspected);
+                                }
+                            } else {
+                                LOGGER.debug("The previous build from "+build.getId()+" was not retrieved.");
+                            }
                         }
 
                         try {
@@ -131,5 +160,56 @@ public class InspectBuilds implements Runnable {
             }
         }
         LOGGER.info("This will now stop.");
+    }
+
+    private static boolean thereIsDiffOnJavaFile(Build build, Build previousBuild) {
+        GHCompare compare = getCompare(build, previousBuild);
+        if (compare != null) {
+            GHCommit.File[] modifiedFiles = compare.getFiles();
+            for (GHCommit.File file : modifiedFiles) {
+                if (file.getFileName().endsWith(".java") && !file.getFileName().toLowerCase().contains("test")) {
+                    //System.out.println("First java file found: " + file.getFileName());
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    private static boolean thereIsDiffOnTests(Build build, Build previousBuild) {
+        GHCompare compare = getCompare(build, previousBuild);
+        if (compare != null) {
+            GHCommit.File[] modifiedFiles = compare.getFiles();
+            for (GHCommit.File file : modifiedFiles) {
+                if (file.getFileName().toLowerCase().contains("test") && file.getFileName().endsWith(".java")) {
+                    //System.out.println("First probable test file found: " + file.getFileName());
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    private static GHCompare getCompare(Build build, Build previousBuild) {
+        try {
+            GitHub gh = GitHubBuilder.fromEnvironment().build();
+
+            GHRateLimit rateLimit = gh.getRateLimit();
+            SimpleDateFormat dateFormat = new SimpleDateFormat("HH:mm:ss");
+            //System.out.println("GitHub rate limit: Limit: " + rateLimit.limit + " - Remaining: " + rateLimit.remaining + " - Reset hour: " + dateFormat.format(rateLimit.reset));
+
+            if (rateLimit.remaining > 2) {
+                GHRepository ghRepo = gh.getRepository(build.getRepository().getSlug());
+                GHCommit buildCommit = ghRepo.getCommit(build.getCommit().getSha());
+                GHCommit previousBuildCommit = ghRepo.getCommit(previousBuild.getCommit().getSha());
+                GHCompare compare = ghRepo.getCompare(previousBuildCommit, buildCommit);
+                return compare;
+            } else {
+                System.out.println("You reached your rate limit for GitHub. You have to wait until " + dateFormat.format(rateLimit.reset) + " to get data. PRInformation will be null for build "+build.getId()+".");
+            }
+        } catch (IOException e) {
+            System.out.println("Error while getting commit from GitHub: " + e);
+        }
+        return null;
     }
 }
