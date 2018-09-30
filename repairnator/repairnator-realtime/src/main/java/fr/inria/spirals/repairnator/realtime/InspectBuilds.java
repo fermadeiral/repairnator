@@ -5,6 +5,7 @@ import fr.inria.jtravis.entities.StateType;
 import fr.inria.spirals.repairnator.BuildToBeInspected;
 import fr.inria.spirals.repairnator.config.RepairnatorConfig;
 import fr.inria.spirals.repairnator.realtime.serializer.WatchedBuildSerializer;
+import fr.inria.spirals.repairnator.states.LauncherMode;
 import fr.inria.spirals.repairnator.states.ScannedBuildStatus;
 import org.apache.commons.collections4.queue.CircularFifoQueue;
 import org.kohsuke.github.*;
@@ -109,7 +110,8 @@ public class InspectBuilds implements Runnable {
                     if (build.getFinishedAt() != null) {
                         LOGGER.debug("Build finished (id:"+build.getId()+" | Status: "+build.getState()+")");
 
-                        if (build.getState() == StateType.PASSED) {
+                        if (RepairnatorConfig.getInstance().getLauncherMode() == LauncherMode.BEARS &&
+                                build.getState() == StateType.PASSED) {
 
                             Optional<Build> optionalBeforeBuild = RepairnatorConfig.getInstance().getJTravis().build().getBefore(build, true);
                             if (optionalBeforeBuild.isPresent()) {

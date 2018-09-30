@@ -278,26 +278,31 @@ public class RTScanner {
      * This method submits a build to the build runner if and only if the build contained failing tests.
      */
     public void submitBuildToExecution(BuildToBeInspected build) {
-        boolean failing = false;
-        List<Job> jobs = build.getBuggyBuild().getJobs();
-        if (jobs != null) {
-            for (Job job : jobs) {
-                Optional<Log> optionalLog = job.getLog();
-                if (optionalLog.isPresent()) {
-                    Log jobLog = optionalLog.get();
-                    if (jobLog.getTestsInformation() != null && (jobLog.getTestsInformation().getErrored() >= 0 || jobLog.getTestsInformation().getFailing() >= 0)) {
-                        failing = true;
-                        break;
+        if (RepairnatorConfig.getInstance().getLauncherMode() == LauncherMode.BEARS) {
+            LOGGER.info("Submit the pair " + build.getBuggyBuild().getId() + "," + build.getPatchedBuild().getId() + " to build runner.");
+            this.buildRunner.submitBuild(build);
+        } else {
+            boolean failing = false;
+            List<Job> jobs = build.getBuggyBuild().getJobs();
+            if (jobs != null) {
+                for (Job job : jobs) {
+                    Optional<Log> optionalLog = job.getLog();
+                    if (optionalLog.isPresent()) {
+                        Log jobLog = optionalLog.get();
+                        if (jobLog.getTestsInformation() != null && (jobLog.getTestsInformation().getErrored() >= 0 || jobLog.getTestsInformation().getFailing() >= 0)) {
+                            failing = true;
+                            break;
+                        }
                     }
                 }
             }
-        }
 
-        if (failing || RepairnatorConfig.getInstance().getLauncherMode() == LauncherMode.BEARS) {
-            LOGGER.info("Failing or erroring tests has been found in build (id: "+build.getBuggyBuild().getId()+")");
-            this.buildRunner.submitBuild(build);
-        } else {
-            LOGGER.info("No failing or erroring test has been found in build (id: "+build.getBuggyBuild().getId()+")");
+            if (failing) {
+                LOGGER.info("Failing or erroring tests has been found in build (id: " + build.getBuggyBuild().getId() + ")");
+                this.buildRunner.submitBuild(build);
+            } else {
+                LOGGER.info("No failing or erroring test has been found in build (id: " + build.getBuggyBuild().getId() + ")");
+            }
         }
     }
 

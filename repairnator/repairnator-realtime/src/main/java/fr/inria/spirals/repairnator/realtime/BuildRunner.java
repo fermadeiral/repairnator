@@ -106,8 +106,8 @@ public class BuildRunner extends AbstractPoolManager {
         LOGGER.info("Build (id: "+pipelineContainer.getInputBuildId().getBuggyBuildId()+") has finished.");
         super.removeSubmittedRunnablePipelineContainer(pipelineContainer);
         if (!this.waitingBuilds.isEmpty()) {
-            BuildToBeInspected build = this.waitingBuilds.pollFirst();
-            this.submitBuild(build);
+            BuildToBeInspected buildToBeInspected = this.waitingBuilds.pollFirst();
+            this.submitBuild(buildToBeInspected);
         }
     }
 }
